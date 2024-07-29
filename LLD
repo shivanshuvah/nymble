@@ -1,0 +1,85 @@
+
+class CameraRequest {
+	int clientId
+	int requestId
+
+}
+
+class ClientCameraRequest extends  CameraRequest{
+	int clientId
+	int requestId
+	Priority priority
+}
+
+class CameraClusterRequest extends CamerRequest {
+	Metadata metadata
+}
+
+class ClientCameraResponse {
+	int responseId
+	int requestId
+	int clientId
+	RequestStatus requestStatus
+	TimeStamp requestTimestamp
+	Exception exception
+}
+
+public enum RequestStatus {
+	QUEUED, DECLINED, FAULTY, PROCESSING;
+}
+
+
+public enum Priority {
+	1,2,3;
+}
+
+public enum Callback {
+	callbackFunction1, callbackFunction2, .... ;
+}
+
+
+CameraRequestService {
+	
+	public RequestStatus getStatusOfRequest(int requestId)
+	public submitCaptureRequest(ClientCameraRequest clientCameraRequest)
+
+}
+
+CallbackDao {
+	MAP<int, T> requestIdVsCallbackSuccessMap
+	MAP<int, T> requestIdVsCallbackFailureMap
+	
+	public <T> T getCallbackSuccessFunction(int requestId)
+	public <T> T getCallbackFailureFunction(int requestId)
+	public void registerCallbackSuccessFunction(int requestId, Callback callback)
+	public void registerCallbackFailureFunction(int requestId, Callback callback)
+}
+
+
+
+
+class Driver {
+	@Listener(Q = PriorityQueue)
+	public static void listenAndProcessRequest(ClientCameraRequest clientCameraRequest){
+		
+		ExecutorService executorService = Executors.newFixedThreadPool(2)
+		Callable callbackTask = new RegisterCallBacks(clientCameraRequest)
+		Callable pushToCameraClusterTask = new CameraClusterQueue();
+		executorService.submit(callbackTask)
+		executorService.submit(pushToCameraClusterTask)
+
+	}
+
+	@Listener(Q = CameraResultQueue)
+	public static void listenAndProcessResult(ClusterCameraResponse clusterCameraResponse) {
+		ExecutorService executorService = Executors.newFixedThreadPool(2)
+		Callable runCallbackTask = new RunCallBacks(clientCameraRequest)
+		Callable pushToClientQueueTask = new ClientQueue();
+		executorService.submit(runCallbackTask)
+		executorService.submit(pushToClientQueueTask)
+
+	}
+}
+
+
+
